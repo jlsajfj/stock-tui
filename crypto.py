@@ -7,17 +7,16 @@ import requests
 
 
 def get_stock_price(symbol: str) -> float:
-    # CNBC API endpoint
-    url = f"https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={symbol}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1"
-
+    url = f"https://production.api.coindesk.com/v2/tb/price/ticker?assets={symbol}"
+    
     # Make a request to the CNBC API
     response = requests.get(url)
-
+    
     # Check if the request was successful
     if response.status_code == 200:
         data = response.json()
         # Extract the relevant fields: last price and percentage change
-        return float(data["FormattedQuoteResult"]["FormattedQuote"][0]["last"])
+        return data['data'][f'{symbol}']["ohlc"]['c']
     else:
         raise Exception(f"Failed to fetch stock data: {response.status_code}")
 
@@ -39,7 +38,7 @@ def main(stdscr):
     height, width = stdscr.getmaxyx()
 
     # Stock symbol (you can change this to any symbol you want)
-    symbol = sys.argv[1].upper() if len(sys.argv) > 1 else "PSNY"
+    symbol = sys.argv[1].upper() if len(sys.argv) > 1 else "BTC"
 
     # Create pyfiglet text
     figlet = pyfiglet.Figlet(font="moscow")
