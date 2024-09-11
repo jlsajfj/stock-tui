@@ -1,7 +1,6 @@
 import curses
 import time
 import math
-import random
 import pyfiglet
 import sys
 import requests
@@ -9,7 +8,6 @@ from akashic_logging import log_info
 import datetime
 import pytz
 from collections import defaultdict
-import multiprocessing
 from enum import Enum
 
 class Color(Enum):
