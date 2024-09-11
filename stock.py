@@ -36,34 +36,6 @@ def get_stock_price(symbol: str) -> float:
     else:
         raise Exception(f"Failed to fetch stock data: {response.status_code}")
 
-def render_window(start_x, start_y, symbol, price_lines, max_line_length, current_color):
-    # Create a new window for the stock price
-    price_win = curses.newwin(
-        len(price_lines),
-        max_line_length + 3,
-        start_y,
-        start_x,
-    )
-
-    for _ in range(10):
-        curses.init_color(10, current_color[0], current_color[1], current_color[2])
-        curses.init_pair(1, 10, -1)
-
-        current_color = tuple(min(1000, x + 200) for x in current_color)
-        # Clear the window
-        # stdscr.clear()
-        price_win.clear()
-        price_win.box()
-
-        price_win.addstr(1, 2, symbol + ":")
-        price_win.attron(curses.color_pair(1))
-        # Display the ASCII art stock price
-        for i, line in enumerate(price_lines[2:]):
-            price_win.addstr(i + 2, 2, line)
-        price_win.attroff(curses.color_pair(1))
-        price_win.refresh()
-        time.sleep(0.1)
-
 
 def main(stdscr):
     log_info("Starting the stock price tracker")
@@ -90,8 +62,7 @@ def main(stdscr):
     stock_prices = defaultdict(lambda: [])
 
     while True:
-        start_x = 3
-        start_y = 3
+        multi_pricelines = ["" for _ in range(12)]
         
         # Get the current stock price
         for symbol in symbols:
@@ -122,15 +93,41 @@ def main(stdscr):
                         
             # Generate ASCII art for the price
             price_text = ".\n" + figlet.renderText(f"${stock_prices[symbol][-1]:.2f}")
-            price_lines = price_text.replace("#", "█").split("\n")
+            price_lines = price_text.replace("#", "█").split("\n")[1:]
+            price_lines = [f'{symbol}: '] + price_lines
             max_line_length = max(len(line) for line in price_lines)
 
-            render_window(start_x, start_y, symbol, price_lines, max_line_length, current_color)
-            
-            start_x += max_line_length + 3
+            price_lines = [a.ljust(max_line_length + 3, " ") for a in price_lines]
+            multi_pricelines = ["||  ".join([m,p]) for m, p in zip(multi_pricelines[:len(price_lines)], price_lines)]
 
+        # Create a new window for the stock price
+        multi_pricelines = [" " + a[3:] for a in  multi_pricelines]
+        max_multi_pricelines =  max(map(len, multi_pricelines))
+        price_win = curses.newwin(
+            len(multi_pricelines) + 4,
+            max_multi_pricelines + 4,
+            height // 2 - len(multi_pricelines) // 2,
+            width // 2 - max_multi_pricelines // 2 - 2,
+        )
+
+        for _ in range(10):
+            curses.init_color(10, current_color[0], current_color[1], current_color[2])
+            curses.init_pair(1, 10, -1)
+
+            current_color = tuple(min(1000, x + 200) for x in current_color)
+            # Clear the window
+            stdscr.clear()
+            price_win.clear()
+            price_win.box()
+            price_win.attron(curses.color_pair(1))
+            # Display the ASCII art stock price
+            for i, line in enumerate(multi_pricelines):
+                price_win.addstr(i + 2, 2, line)
+            price_win.attroff(curses.color_pair(1))
+            price_win.refresh()
+            time.sleep(0.1)
         time.sleep(1)
-        log_info(f"Updated display for {symbol}")
+        log_info(f"Updated display for {symbols}")
 
 
 # Run the main function
