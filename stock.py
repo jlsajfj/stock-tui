@@ -77,8 +77,6 @@ def main(stdscr):
                 log_info(f"Change delta for PSNY: {change_delta:.2f}%", level="DEBUG")
             elif change_delta < 0:
                 log_info(f"Change delta for PSNY: {change_delta:.2f}%", level="ERROR")
-            else:
-                log_info(f"Change delta for PSNY: 0.00%")
 
         last_price = current_price
 
