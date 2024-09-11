@@ -57,7 +57,7 @@ def main(stdscr):
 
         # Generate ASCII art for the price
         price_text = ".\n" + figlet.renderText(f"${current_price:.2f}")
-        price_lines = price_text.split("\n")
+        price_lines = price_text.replace('#', '█').split("\n")
         max_line_length = max(len(line) for line in price_lines)
 
         # Create a new window for the stock price
