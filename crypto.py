@@ -8,15 +8,15 @@ import requests
 
 def get_stock_price(symbol: str) -> float:
     url = f"https://production.api.coindesk.com/v2/tb/price/ticker?assets={symbol}"
-    
+
     # Make a request to the CNBC API
     response = requests.get(url)
-    
+
     # Check if the request was successful
     if response.status_code == 200:
         data = response.json()
         # Extract the relevant fields: last price and percentage change
-        return data['data'][f'{symbol}']["ohlc"]['c']
+        return data["data"][f"{symbol}"]["ohlc"]["c"]
     else:
         raise Exception(f"Failed to fetch stock data: {response.status_code}")
 
@@ -57,7 +57,7 @@ def main(stdscr):
 
         # Generate ASCII art for the price
         price_text = ".\n" + figlet.renderText(f"${current_price:.2f}")
-        price_lines = price_text.replace('#', '█').split("\n")
+        price_lines = price_text.replace("#", "█").split("\n")
         max_line_length = max(len(line) for line in price_lines)
 
         # Create a new window for the stock price
