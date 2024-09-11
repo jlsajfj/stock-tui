@@ -9,6 +9,12 @@ import datetime
 import pytz
 from collections import defaultdict
 import multiprocessing
+from enum import Enum
+
+class Color(Enum):
+    RED = (1000, 0, 0)
+    GREEN = (0, 1000, 0)
+    WHITE = (1000, 1000, 1000)
 
 PRICES_TO_KEEP_TRACK = 20
 
@@ -59,11 +65,11 @@ def main(stdscr):
     # Stock symbol (you can change this to any symbol you want)
     symbols = [s.upper() for s in sys.argv[1:]] if len(sys.argv) > 1 else ["PSNY"]
 
-    stock_prices = defaultdict(lambda: [])
+    stock_prices = defaultdict(lambda: [1])
 
     while True:
-        multi_pricelines = ["" for _ in range(12)]
-        
+        multi_pricelines = [[] for _ in range(8)]
+        current_colors = []
         # Get the current stock price
         for symbol in symbols:
             try:
@@ -75,22 +81,22 @@ def main(stdscr):
                 log_info(f"Error retrieving stock price: {str(e)}", level="ERROR")
                 continue
 
-            current_color = (1000, 1000, 1000)
-            if len(stock_prices[symbol]) > 1:
-                current_price = stock_prices[symbol][-1]
-                last_price = stock_prices[symbol][-2]
-                if current_price > last_price:
-                    current_color = (0, 1000, 0)
-                else:
-                    current_color = (1000, 0, 0)
+            current_color = Color.WHITE.value
+            current_price = stock_prices[symbol][-1]
+            last_price = stock_prices[symbol][-2]
+            if current_price > last_price:
+                current_color = Color.GREEN.value
+            elif current_price < last_price:
+                current_color = Color.RED.value
 
-                if symbol == "PSNY":
-                    change_delta = ((current_price - last_price) / last_price) * 100
-                    if change_delta > 0:
-                        log_info(f"Change delta for PSNY: {change_delta:.2f}%", level="DEBUG")
-                    elif change_delta < 0:
-                        log_info(f"Change delta for PSNY: {change_delta:.2f}%", level="ERROR")
-                        
+            if symbol == "PSNY":
+                change_delta = ((current_price - last_price) / last_price) * 100
+                if change_delta > 0:
+                    log_info(f"Change delta for PSNY: {change_delta:.2f}%", level="DEBUG")
+                elif change_delta < 0:
+                    log_info(f"Change delta for PSNY: {change_delta:.2f}%", level="ERROR")
+            current_colors.append(current_color)
+
             # Generate ASCII art for the price
             price_text = ".\n" + figlet.renderText(f"${stock_prices[symbol][-1]:.2f}")
             price_lines = price_text.replace("#", "█").split("\n")[1:]
@@ -98,32 +104,36 @@ def main(stdscr):
             max_line_length = max(len(line) for line in price_lines)
 
             price_lines = [a.ljust(max_line_length + 3, " ") for a in price_lines]
-            multi_pricelines = ["||  ".join([m,p]) for m, p in zip(multi_pricelines[:len(price_lines)], price_lines)]
+            for i in range(len(price_lines)):
+                multi_pricelines[i].append(price_lines[i])
 
         # Create a new window for the stock price
-        multi_pricelines = [" " + a[3:] for a in  multi_pricelines]
-        max_multi_pricelines =  max(map(len, multi_pricelines))
+        multi_pricelines_str = ["    ".join(a) for a in  multi_pricelines]
+        max_multi_pricelines =  max(map(len, multi_pricelines_str))
         price_win = curses.newwin(
-            len(multi_pricelines) + 4,
+            len(multi_pricelines_str) + 4,
             max_multi_pricelines + 4,
-            height // 2 - len(multi_pricelines) // 2,
+            height // 2 - len(multi_pricelines_str) // 2,
             width // 2 - max_multi_pricelines // 2 - 2,
         )
 
-        for _ in range(10):
-            curses.init_color(10, current_color[0], current_color[1], current_color[2])
-            curses.init_pair(1, 10, -1)
-
-            current_color = tuple(min(1000, x + 200) for x in current_color)
+        for color_gradient_idx in range(10):
             # Clear the window
             stdscr.clear()
             price_win.clear()
             price_win.box()
-            price_win.attron(curses.color_pair(1))
+
             # Display the ASCII art stock price
-            for i, line in enumerate(multi_pricelines):
-                price_win.addstr(i + 2, 2, line)
-            price_win.attroff(curses.color_pair(1))
+            for i, lines in enumerate(multi_pricelines):
+                start_x = 2
+                for line_idx, ticker_line in enumerate(lines):
+                    current_color = tuple(min(1000, x + color_gradient_idx * 200) for x in current_colors[line_idx])
+                    curses.init_color(line_idx + 20, current_color[0], current_color[1], current_color[2])
+                    curses.init_pair(line_idx+1, line_idx + 20, -1)
+                    formatted_ticker_line = f" {ticker_line}|  " if line_idx != len(lines) -1 else ticker_line
+                    price_win.addstr(i + 2, start_x, formatted_ticker_line, curses.color_pair(line_idx+1))
+                    start_x += len(formatted_ticker_line)
+
             price_win.refresh()
             time.sleep(0.1)
         time.sleep(1)
