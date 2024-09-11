@@ -3,7 +3,7 @@ import json
 
 
 def log_info(message: str, level: str = "INFO") -> str | None:
-    url = "http://localhost:5231/post"
+    url = "http://localhost:5231/log"
     payload = {"level": level, "message": message, "name": "stock-tui"}
     headers = {"Content-Type": "application/json"}
 
