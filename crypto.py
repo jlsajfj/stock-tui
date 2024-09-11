@@ -4,6 +4,7 @@ import random
 import pyfiglet
 import sys
 import requests
+from akashic_logging import log_info
 
 
 def get_stock_price(symbol: str) -> float:
@@ -22,6 +23,7 @@ def get_stock_price(symbol: str) -> float:
 
 
 def main(stdscr):
+    log_info("Starting the stock price tracker")
     last_price = None
 
     # Clear screen
@@ -45,7 +47,12 @@ def main(stdscr):
 
     while True:
         # Get the current stock price
-        current_price = get_stock_price(symbol)
+        try:
+            current_price = get_stock_price(symbol)
+            log_info(f"Retrieved stock price for {symbol}: ${current_price:.2f}")
+        except Exception as e:
+            log_info(f"Error retrieving stock price: {str(e)}", level="ERROR")
+            continue
 
         current_color = (1000, 1000, 1000)
         if last_price is not None and last_price != current_price:
@@ -88,6 +95,7 @@ def main(stdscr):
             time.sleep(0.1)
 
         time.sleep(1)
+        log_info(f"Updated display for {symbol}")
 
 
 # Run the main function
