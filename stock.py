@@ -1,5 +1,6 @@
 import curses
 import time
+import math
 import random
 import pyfiglet
 import sys
@@ -16,7 +17,9 @@ class Color(Enum):
     GREEN = (0, 1000, 0)
     WHITE = (1000, 1000, 1000)
 
-PRICES_TO_KEEP_TRACK = 20
+PRICES_TO_KEEP_TRACK = 50
+BLOCK_CHARS = "▁▂▃▅▆▇▉"
+INITIAL_VALUE = -1
 
 def get_stock_price(symbol: str) -> float:
     # CNBC API endpoint
@@ -65,17 +68,18 @@ def main(stdscr):
     # Stock symbol (you can change this to any symbol you want)
     symbols = [s.upper() for s in sys.argv[1:]] if len(sys.argv) > 1 else ["PSNY"]
 
-    stock_prices = defaultdict(lambda: [1])
+    stock_prices = defaultdict(lambda: [INITIAL_VALUE])
 
     while True:
-        multi_pricelines = [[] for _ in range(8)]
+        multi_pricelines = [[] for _ in range(9)]
         current_colors = []
         # Get the current stock price
         for symbol in symbols:
             try:
                 current_price = get_stock_price(symbol)
                 stock_prices[symbol].append(current_price)
-                stock_prices[symbol][1:PRICES_TO_KEEP_TRACK+1]
+                if len(stock_prices[symbol]) > PRICES_TO_KEEP_TRACK:
+                    stock_prices[symbol] = stock_prices[symbol][1:PRICES_TO_KEEP_TRACK+1]
                 log_info(f"Retrieved stock price for {symbol}: ${current_price:.2f}")
             except Exception as e:
                 log_info(f"Error retrieving stock price: {str(e)}", level="ERROR")
@@ -100,8 +104,12 @@ def main(stdscr):
             # Generate ASCII art for the price
             price_text = ".\n" + figlet.renderText(f"${stock_prices[symbol][-1]:.2f}")
             price_lines = price_text.replace("#", "█").split("\n")[1:]
-            price_lines = [f'{symbol}: '] + price_lines
+            
             max_line_length = max(len(line) for line in price_lines)
+            filtered_prices = [s for s in stock_prices[symbol] if s != INITIAL_VALUE][:max_line_length]
+            min_price, max_price = min(filtered_prices), max(filtered_prices) + 1e-5
+            bar_line = "".join([BLOCK_CHARS[math.floor(7*(a-min_price)/(max_price-min_price))] for a in filtered_prices])
+            price_lines = [f'{symbol}: '] + price_lines + [bar_line[:max_line_length]]
 
             price_lines = [a.ljust(max_line_length + 3, " ") for a in price_lines]
             for i in range(len(price_lines)):
@@ -130,7 +138,7 @@ def main(stdscr):
                     current_color = tuple(min(1000, x + color_gradient_idx * 200) for x in current_colors[line_idx])
                     curses.init_color(line_idx + 20, current_color[0], current_color[1], current_color[2])
                     curses.init_pair(line_idx+1, line_idx + 20, -1)
-                    formatted_ticker_line = f" {ticker_line}|  " if line_idx != len(lines) -1 else ticker_line
+                    formatted_ticker_line = f" {ticker_line}|  " if line_idx != len(lines) -1 else f" {ticker_line}"
                     price_win.addstr(i + 2, start_x, formatted_ticker_line, curses.color_pair(line_idx+1))
                     start_x += len(formatted_ticker_line)
 
