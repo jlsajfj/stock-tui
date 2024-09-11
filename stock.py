@@ -5,6 +5,8 @@ import pyfiglet
 import sys
 import requests
 from akashic_logging import log_info
+import datetime
+import pytz
 
 
 def get_stock_price(symbol: str) -> float:
@@ -18,10 +20,10 @@ def get_stock_price(symbol: str) -> float:
     if response.status_code == 200:
         data = response.json()
         # Extract the relevant fields: last price and percentage change
-        if (
-            data["FormattedQuoteResult"]["FormattedQuote"][0]["ExtendedMktQuote"]
-            is not None
-        ):
+        ny_time = datetime.datetime.now(pytz.timezone("America/New_York"))
+        market_open = ny_time.replace(hour=9, minute=30, second=0, microsecond=0)
+        market_close = ny_time.replace(hour=16, minute=0, second=0, microsecond=0)
+        if ny_time < market_open or ny_time > market_close:
             return float(
                 data["FormattedQuoteResult"]["FormattedQuote"][0]["ExtendedMktQuote"][
                     "last"
