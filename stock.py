@@ -117,7 +117,7 @@ def main(stdscr):
         multi_pricelines_str = ["    ".join(a) for a in  multi_pricelines]
         max_multi_pricelines =  max(map(len, multi_pricelines_str))
         price_win = curses.newwin(
-            len(multi_pricelines_str) + 4,
+            len(multi_pricelines_str) + 2,
             max_multi_pricelines + 4,
             height // 2 - len(multi_pricelines_str) // 2,
             width // 2 - max_multi_pricelines // 2 - 2,
@@ -137,7 +137,7 @@ def main(stdscr):
                     curses.init_color(line_idx + 20, current_color[0], current_color[1], current_color[2])
                     curses.init_pair(line_idx+1, line_idx + 20, -1)
                     formatted_ticker_line = f" {ticker_line}|  " if line_idx != len(lines) -1 else f" {ticker_line}"
-                    price_win.addstr(i + 2, start_x, formatted_ticker_line, curses.color_pair(line_idx+1))
+                    price_win.addstr(i + 1, start_x, formatted_ticker_line, curses.color_pair(line_idx+1))
                     start_x += len(formatted_ticker_line)
 
             price_win.refresh()
