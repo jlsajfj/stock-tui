@@ -12,5 +12,4 @@ def log_info(message: str, level: str = "INFO") -> str | None:
         response.raise_for_status()
         return response.text
     except requests.exceptions.RequestException as e:
-        print(f"Error sending log: {e}")
         return None
