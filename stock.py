@@ -18,6 +18,15 @@ def get_stock_price(symbol: str) -> float:
     if response.status_code == 200:
         data = response.json()
         # Extract the relevant fields: last price and percentage change
+        if (
+            data["FormattedQuoteResult"]["FormattedQuote"][0]["ExtendedMktQuote"]
+            is not None
+        ):
+            return float(
+                data["FormattedQuoteResult"]["FormattedQuote"][0]["ExtendedMktQuote"][
+                    "last"
+                ]
+            )
         return float(data["FormattedQuoteResult"]["FormattedQuote"][0]["last"])
     else:
         raise Exception(f"Failed to fetch stock data: {response.status_code}")
