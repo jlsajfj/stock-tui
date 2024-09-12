@@ -114,7 +114,7 @@ def main(stdscr):
 
             max_line_length = max(len(line) for line in price_lines)
             filtered_prices = [s for s in stock_prices[symbol] if s != INITIAL_VALUE][
-                :max_line_length
+                -max_line_length:
             ]
             min_price, max_price = min(filtered_prices), max(filtered_prices) + 1e-5
             bar_line = "".join(
@@ -122,10 +122,10 @@ def main(stdscr):
                     BLOCK_CHARS[
                         math.floor(7 * (a - min_price) / (max_price - min_price))
                     ]
-                    for a in filtered_prices
+                    for a in filtered_prices[1:]
                 ]
             )
-            price_lines = [f"{symbol}: "] + price_lines + [bar_line[:max_line_length]]
+            price_lines = [f"{symbol}: "] + price_lines + [bar_line]
 
             price_lines = [a.ljust(max_line_length + 3, " ") for a in price_lines]
             for i in range(len(price_lines)):
