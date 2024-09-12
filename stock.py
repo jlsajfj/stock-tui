@@ -22,7 +22,7 @@ BLOCK_CHARS = "▁▂▃▅▆▇▉"
 INITIAL_VALUE = -1
 
 
-def get_stock_price(symbol: str) -> float:
+def get_stock_price(symbol: str) -> tuple:
     # CNBC API endpoint
     url = f"https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={symbol}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1"
 
@@ -36,17 +36,17 @@ def get_stock_price(symbol: str) -> float:
         ny_time = datetime.datetime.now(pytz.timezone("America/New_York"))
         market_open = ny_time.replace(hour=9, minute=30, second=0, microsecond=0)
         market_close = ny_time.replace(hour=16, minute=0, second=0, microsecond=0)
-        if (
-            "ExtendedMktQuote" in data["FormattedQuoteResult"]["FormattedQuote"][0]
-            and ny_time < market_open
-            or ny_time > market_close
+        quote_data = data["FormattedQuoteResult"]["FormattedQuote"][0]
+
+        if "ExtendedMktQuote" in quote_data and (
+            ny_time < market_open or ny_time > market_close
         ):
-            return float(
-                data["FormattedQuoteResult"]["FormattedQuote"][0]["ExtendedMktQuote"][
-                    "last"
-                ]
-            )
-        return float(data["FormattedQuoteResult"]["FormattedQuote"][0]["last"])
+            price = float(quote_data["ExtendedMktQuote"]["last"])
+        else:
+            price = float(quote_data["last"])
+
+        name = quote_data.get("name", symbol)
+        return price, name
     else:
         raise Exception(f"Failed to fetch stock data: {response.status_code}")
 
@@ -81,13 +81,13 @@ def main(stdscr):
         # Get the current stock price
         for symbol in symbols:
             try:
-                current_price = get_stock_price(symbol)
+                current_price, name = get_stock_price(symbol)
                 stock_prices[symbol].append(current_price)
                 if len(stock_prices[symbol]) > PRICES_TO_KEEP_TRACK:
                     stock_prices[symbol] = stock_prices[symbol][
                         1 : PRICES_TO_KEEP_TRACK + 1
                     ]
-                log_info(f"Retrieved stock price for {symbol}: ${current_price:.2f}")
+                log_info(f"Retrieved stock price for {name}: ${current_price:.2f}")
             except Exception as e:
                 log_info(f"Error retrieving stock price: {str(e)}", level="ERROR")
                 continue
@@ -104,16 +104,20 @@ def main(stdscr):
                 change_delta = ((current_price - last_price) / last_price) * 100
                 if change_delta > 0:
                     log_info(
-                        f"Change delta for PSNY: {change_delta:.2f}%", level="DEBUG"
+                        f"Change delta for {name}: {change_delta:.2f}%", level="DEBUG"
                     )
                 elif change_delta < 0:
                     log_info(
-                        f"Change delta for PSNY: {change_delta:.2f}%", level="ERROR"
+                        f"Change delta for {name}: {change_delta:.2f}%", level="ERROR"
                     )
             current_colors.append(current_color)
 
             # Generate ASCII art for the price
-            price_text = figlet.renderText(f"${stock_prices[symbol][-1]:.2f}")
+            price_text = figlet.renderText(
+                f"${stock_prices[symbol][-1]:.3f}"
+                if stock_prices[symbol][-1] < 1
+                else f"${stock_prices[symbol][-1]:.2f}"
+            )
             price_lines = price_text.replace("#", "█").split("\n")[1:-1]
 
             max_line_length = max(len(line) for line in price_lines)
@@ -129,7 +133,7 @@ def main(stdscr):
                     for a in filtered_prices[1:]
                 ]
             )
-            price_lines = [f"{symbol}: "] + price_lines # + [bar_line]
+            price_lines = [f"{name}: "] + price_lines  # + [bar_line]
 
             price_lines = [a.ljust(max_line_length + 3, " ") for a in price_lines]
             for i in range(len(price_lines)):
