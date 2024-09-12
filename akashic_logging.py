@@ -2,7 +2,7 @@ import requests
 import json
 
 
-def log_info(message: str, level: str = "INFO") -> str | None:
+def log_info(message, level="INFO"):
     url = "http://localhost:5231/log"
     payload = {"level": level, "message": message, "name": "stock-tui"}
     headers = {"Content-Type": "application/json"}
