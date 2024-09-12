@@ -36,7 +36,11 @@ def get_stock_price(symbol: str) -> float:
         ny_time = datetime.datetime.now(pytz.timezone("America/New_York"))
         market_open = ny_time.replace(hour=9, minute=30, second=0, microsecond=0)
         market_close = ny_time.replace(hour=16, minute=0, second=0, microsecond=0)
-        if ny_time < market_open or ny_time > market_close:
+        if (
+            "ExtendedMktQuote" in data["FormattedQuoteResult"]["FormattedQuote"][0]
+            and ny_time < market_open
+            or ny_time > market_close
+        ):
             return float(
                 data["FormattedQuoteResult"]["FormattedQuote"][0]["ExtendedMktQuote"][
                     "last"
