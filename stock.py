@@ -129,7 +129,7 @@ def main(stdscr):
                     for a in filtered_prices[1:]
                 ]
             )
-            price_lines = [f"{symbol}: "] + price_lines + [bar_line]
+            price_lines = [f"{symbol}: "] + price_lines # + [bar_line]
 
             price_lines = [a.ljust(max_line_length + 3, " ") for a in price_lines]
             for i in range(len(price_lines)):
@@ -139,7 +139,7 @@ def main(stdscr):
         multi_pricelines_str = ["    ".join(a) for a in multi_pricelines]
         max_multi_pricelines = max(map(len, multi_pricelines_str))
         price_win = curses.newwin(
-            len(multi_pricelines_str),
+            len(multi_pricelines_str) - 1,
             max_multi_pricelines,
             height // 2 - len(multi_pricelines_str) // 2,
             width // 2 - max_multi_pricelines // 2 - 2,
